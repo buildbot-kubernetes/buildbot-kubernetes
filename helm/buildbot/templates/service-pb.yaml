@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "buildbot.fullname" . }}-master-pb
+  labels:
+    app: {{ template "buildbot.name" . }}
+    chart: {{ template "buildbot.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    compotent: {{ template "buildbot.name" . }}-master
+{{- with .Values.master.servicePB.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  type: {{ .Values.master.servicePB.type }}
+  ports:
+    - port: {{ .Values.master.servicePB.port }}
+      targetPort: pb
+      protocol: TCP
+      name: pb
+  selector:
+    app: {{ template "buildbot.name" . }}
+    chart: {{ template "buildbot.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    compotent: {{ template "buildbot.name" . }}-master

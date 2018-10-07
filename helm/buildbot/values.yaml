@@ -1,0 +1,99 @@
+# Default values for buildbot.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+master:
+  replicaCount: 2
+  kind: Deployment
+  image:
+    repository: buildbot/buildbot-master
+    tag: v1.4.0-py3
+    pullPolicy: IfNotPresent
+
+  servicePB:
+    type: ClusterIP
+    port: 9989
+
+  serviceUI:
+    type: ClusterIP
+    port: 8010
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #  cpu: 100m
+    #  memory: 128Mi
+    # requests:
+    #  cpu: 100m
+    #  memory: 128Mi
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  antiAffinity: "soft"
+
+  securityContext:
+    capabilities:
+      drop:
+      - ALL
+    runAsUser: 945
+    fsGroup: 945
+
+worker:
+  enabled: True
+  replicaCount: 2
+  kind: Deployment
+  image:
+    repository: buildbot/buildbot-worker
+    tag: v1.4.0-py3
+    pullPolicy: IfNotPresent
+  password:
+    secret_name:
+    value:
+    key: worker_password
+
+crossbar:
+  enabled: True
+  image:
+    repository: crossbario/crossbar
+    tag: cpy3-18.9.2
+    pullPolicy: IfNotPresent
+
+local_docker:
+  enabled: False
+  image:
+    repository: docker
+    tag: 18.06.1-ce-dind
+    pullPolicy: IfNotPresent
+
+ingress:
+  enabled: False
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  path: /
+  hosts:
+    - buildbot.local
+  tls: []
+  #  - secretName: buildbot-tls
+  #    hosts:
+  #      - buildbot.local
+
+config:
+  type: configMap
+  name:
+  items:
+    - key: master.cfg
+      path: master.cfg
+
+db:
+  force_url:
+
+postgresql:
+  enabled: True
+  postgresUser: buildbot
+  postgresDatabase: buildbot

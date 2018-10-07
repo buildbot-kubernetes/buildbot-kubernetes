@@ -1,0 +1,27 @@
+{{- if .Values.crossbar.enabled }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "buildbot.fullname" . }}-crossbar
+  labels:
+    app: {{ template "buildbot.name" . }}
+    chart: {{ template "buildbot.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    compotent: {{ template "buildbot.name" . }}-crossbar
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ template "buildbot.name" . }}
+        chart: {{ template "buildbot.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        compotent: {{ template "buildbot.name" . }}-crossbar
+    spec:
+      containers:
+      - name: crossbar
+        image: {{ .Values.crossbar.image.repository }}:{{ .Values.crossbar.image.tag }}
+        imagePullPolicy: {{ .Values.crossbar.image.pullPolicy }}
+{{ end }}

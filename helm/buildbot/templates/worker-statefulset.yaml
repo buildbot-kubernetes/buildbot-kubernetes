@@ -1,0 +1,45 @@
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: {{ template "buildbot.fullname" . }}-worker
+  labels:
+    app: {{ template "buildbot.name" . }}
+    chart: {{ template "buildbot.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    compotent: {{ template "buildbot.name" . }}-worker
+spec:
+  serviceName: {{ template "buildbot.fullname" . }}-worker
+  replicas: {{ .Values.worker.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "buildbot.name" . }}
+        chart: {{ template "buildbot.chart" . }}
+        release: {{ .Release.Name }}
+        heritage: {{ .Release.Service }}
+        compotent: {{ template "buildbot.name" . }}-worker
+    spec:
+      containers:
+      - name: worker
+        image: buildbot/buildbot-worker
+        imagePullPolicy: Always
+        env:
+        - name: BUILDMASTER
+          value: '{{ template "buildbot.fullname" . }}-master-pb'
+        - name: BUILDMASTER_PORT
+          value: '9989'
+        - name: WORKERNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: WORKERPASS
+          valueFrom:
+            secretKeyRef:
+{{- if .Values.worker.password.secret_name}}
+              name: {{ .Values.worker.password.secret_name }}
+{{- else }}
+              name: {{ .Release.Name }}-worker-secret
+{{- end }}
+              key: {{ .Values.worker.password.key }}

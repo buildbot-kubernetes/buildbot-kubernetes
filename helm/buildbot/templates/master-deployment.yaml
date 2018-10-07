@@ -1,0 +1,16 @@
+{{- if eq .Values.master.kind "Deployment" }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "buildbot.fullname" . }}-master
+  labels:
+    app: {{ template "buildbot.name" . }}
+    chart: {{ template "buildbot.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    compotent: {{ template "buildbot.name" . }}-master
+spec:
+{{ include "buildbot.master" . | indent 2 }}
+      - name: buildbot-master-dir
+        emptyDir: {}
+{{- end }}

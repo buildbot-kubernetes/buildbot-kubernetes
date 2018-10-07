@@ -1,0 +1,35 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: gcr.io/k8s-skaffold/skaffold:v0.15.1
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: 'setup a kubernetes'
+          command: |
+            set -x
+            curl -o dind-cluster-v1.8.sh https://cdn.rawgit.com/kubernetes-sigs/kubeadm-dind-cluster/master/fixed/dind-cluster-v1.8.sh
+            curl -o portforward.sh https://cdn.rawgit.com/kubernetes-sigs/kubeadm-dind-cluster/master/build/portforward.sh
+            chmod +x dind-cluster-v1.8.sh
+            chmod +x portforward.sh
+            apt-get install -y socat
+            VER="17.03.0-ce"
+            curl -L -o /tmp/docker-$VER.tgz https://download.docker.com/linux/static/stable/x86_64/docker-$VER.tgz
+            tar -xz -C /tmp -f /tmp/docker-$VER.tgz
+            mv /tmp/docker/* /usr/bin
+            ./portforward.sh start
+            export DIND_PORT_FORWARDER_WAIT=1
+            export DIND_PORT_FORWARDER="${PWD}/portforward.sh"
+            ./dind-cluster-v1.8.sh up
+            helm init
+            for _ in $(seq 1 30); do
+               helm version && break
+               sleep 1
+            done
+      - run:
+          name: 'run skaffold'
+          command: |
+            ./portforward.sh 32768
+            skaffold run

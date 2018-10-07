@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "buildbot.fullname" . }}-master-ui
+  labels:
+    app: {{ template "buildbot.name" . }}
+    chart: {{ template "buildbot.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    compotent: {{ template "buildbot.name" . }}-master
+{{- with .Values.master.serviceUI.annotations }}
+  annotations:
+{{ toYaml . | indent 4 }}
+{{- end }}
+spec:
+  type: {{ .Values.master.serviceUI.type }}
+  ports:
+    - port: {{ .Values.master.serviceUI.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ template "buildbot.name" . }}
+    chart: {{ template "buildbot.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    compotent: {{ template "buildbot.name" . }}-master

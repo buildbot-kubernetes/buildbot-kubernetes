@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-master.cfg
+  labels:
+    app: {{ template "buildbot.name" . }}
+    chart: {{ template "buildbot.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  master.cfg: |-
+    # -*- python -*-
+    # ex: set filetype=python:
+
+    import os
+    from buildbot.plugins import *
+
+    # This is the dictionary that the buildmaster pays attention to. We also use
+    # a shorter alias to save typing.
+    c = BuildmasterConfig = {}
+
+    ####### WORKERS
+
+    # The 'workers' list defines the set of recognized workers. Each element is
+    # a Worker object, specifying a unique worker name and password.  The same
+    # worker name and password must be configured on the worker.
+    c['workers'] = [
+        worker.Worker(
+            '{{ template "buildbot.fullname" . }}-worker-{0}'.format(worker_id),
+            password=os.environ['WORKERPASS'],
+        )
+        for worker_id in range(int(os.environ.get('NUM_WORKERS', 1)))
+    ]
+
+    c['mq'] = {
+        'type': 'wamp',
+        'router_url': 'ws:/{{ template "buildbot.fullname" . }}-crossbar:8080/ws',
+        'realm': 'realm1',
+    }
+    c['multiMaster'] = True
+
+    # 'protocols' contains information about protocols which master will use for
+    # communicating with workers. You must define at least 'port' option that workers
+    # could connect to your master with this protocol.
+    # 'port' must match the value configured into the workers (with their
+    # --master option)
+    c['protocols'] = {'pb': {'port': {{ .Values.master.servicePB.port }}}}
+
+    ####### CHANGESOURCES
+
+    # the 'change_source' setting tells the buildmaster how it should find out
+    # about source code changes.  Here we point to the buildbot clone of pyflakes.
+
+    c['change_source'] = []
+    c['change_source'].append(changes.GitPoller(
+            'git://github.com/buildbot/pyflakes.git',
+            workdir='gitpoller-workdir', branch='master',
+            pollinterval=300))
+
+    ####### SCHEDULERS
+
+    # Configure the Schedulers, which decide how to react to incoming changes.  In this
+    # case, just kick off a 'runtests' build
+
+    c['schedulers'] = []
+    c['schedulers'].append(schedulers.SingleBranchScheduler(
+                                name="all",
+                                change_filter=util.ChangeFilter(branch='master'),
+                                treeStableTimer=None,
+                                builderNames=["runtests"]))
+    c['schedulers'].append(schedulers.ForceScheduler(
+                                name="force",
+                                builderNames=["runtests"]))
+
+    ####### BUILDERS
+
+    # The 'builders' list defines the Builders, which tell Buildbot how to perform a build:
+    # what steps, and which workers can execute them.  Note that any particular build will
+    # only take place on one worker.
+
+    factory = util.BuildFactory()
+    # check out the source
+    factory.addStep(steps.Git(repourl='git://github.com/buildbot/pyflakes.git', mode='incremental'))
+    # run the tests (note that this will require that 'trial' is installed)
+    factory.addStep(steps.ShellCommand(command=["trial", "pyflakes"]))
+
+    c['builders'] = []
+    c['builders'].append(
+        util.BuilderConfig(name="runtests",
+          workernames=[worker.name for worker in c['workers']],
+          factory=factory))
+
+    ####### BUILDBOT SERVICES
+
+    # 'services' is a list of BuildbotService items like reporter targets. The
+    # status of each build will be pushed to these targets. buildbot/reporters/*.py
+    # has a variety to choose from, like IRC bots.
+
+    c['services'] = []
+
+    ####### PROJECT IDENTITY
+
+    # the 'title' string will appear at the top of this buildbot installation's
+    # home pages (linked to the 'titleURL').
+
+    c['title'] = "Pyflakes"
+    c['titleURL'] = "https://launchpad.net/pyflakes"
+    c['buildbotNetUsageData'] = 'basic'
+
+    # the 'buildbotURL' string should point to the location where the buildbot's
+    # internal web server is visible. This typically uses the port number set in
+    # the 'www' entry below, but with an externally-visible host name which the
+    # buildbot cannot figure out without some help.
+
+    c['buildbotURL'] = os.environ.get('BUILDBOT_MASTER_URL', 'http://localhost:{{ .Values.master.serviceUI.port }}/')
+
+    # minimalistic config to activate new web UI
+    c['www'] = dict(port={{ .Values.master.serviceUI.port }},
+                    plugins=dict(waterfall_view={}, console_view={}))
+
+    ####### DB URL
+
+    c['db'] = {
+        # This specifies what database buildbot uses to store its state
+{{- if .Values.db.force_url }}
+        'db_url': "{{ .Values.db.force_url }}".format(**os.environ)
+{{- else }}
+        'db_url' : "postgresql+psycopg2://{PG_USERNAME}:{PG_PASSWORD}@{{ .Release.Name }}-postgresql/{{ .Values.postgresql.postgresDatabase }}".format(**os.environ)
+{{- end }}
+    }

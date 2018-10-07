@@ -1,0 +1,17 @@
+apiVersion: skaffold/v1alpha3
+kind: Config
+#build:
+#  artifacts:
+#  - imageName: buildbot-kubernetes
+#    workspace: images/buildbot-kubernetes
+deploy:
+  helm:
+    releases:
+    - name: buildbot-kubernetes
+      chartPath: helm/buildbot
+      namespace: bb-kube-dev
+#      values:
+#        image: buildbot-kubernetes
+      overrides:
+        postgresql:
+          postgresPassword: skaffold

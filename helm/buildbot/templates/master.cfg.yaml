@@ -51,44 +51,37 @@ data:
     # the 'change_source' setting tells the buildmaster how it should find out
     # about source code changes.  Here we point to the buildbot clone of pyflakes.
 
-    c['change_source'] = []
-    c['change_source'].append(changes.GitPoller(
-            'git://github.com/buildbot/pyflakes.git',
-            workdir='gitpoller-workdir', branch='master',
-            pollinterval=300))
+    c['change_source'] = [
+{{- range .Values.config.changeSource }}
+{{ . | indent 8 }},
+{{- end }}
+    ]
 
     ####### SCHEDULERS
 
     # Configure the Schedulers, which decide how to react to incoming changes.  In this
     # case, just kick off a 'runtests' build
 
-    c['schedulers'] = []
-    c['schedulers'].append(schedulers.SingleBranchScheduler(
-                                name="all",
-                                change_filter=util.ChangeFilter(branch='master'),
-                                treeStableTimer=None,
-                                builderNames=["runtests"]))
-    c['schedulers'].append(schedulers.ForceScheduler(
-                                name="force",
-                                builderNames=["runtests"]))
-
+    c['schedulers'] = [
+{{- range .Values.config.schedulers }}
+{{ . | indent 8 }},
+{{- end }}
+    ]
     ####### BUILDERS
 
     # The 'builders' list defines the Builders, which tell Buildbot how to perform a build:
     # what steps, and which workers can execute them.  Note that any particular build will
     # only take place on one worker.
 
-    factory = util.BuildFactory()
-    # check out the source
-    factory.addStep(steps.Git(repourl='git://github.com/buildbot/pyflakes.git', mode='incremental'))
-    # run the tests (note that this will require that 'trial' is installed)
-    factory.addStep(steps.ShellCommand(command=["trial", "pyflakes"]))
+{{- range .Values.config.factories }}
+{{ . | indent 4 }}
+{{- end }}
 
-    c['builders'] = []
-    c['builders'].append(
-        util.BuilderConfig(name="runtests",
-          workernames=[worker.name for worker in c['workers']],
-          factory=factory))
+    c['builders'] = [
+{{- range .Values.config.builders }}
+{{ . | indent 8 }},
+{{- end }}
+    ]
 
     ####### BUILDBOT SERVICES
 
@@ -96,16 +89,19 @@ data:
     # status of each build will be pushed to these targets. buildbot/reporters/*.py
     # has a variety to choose from, like IRC bots.
 
-    c['services'] = []
-
+    c['services'] = [
+{{- range .Values.config.services }}
+{{ . | indent 8 }},
+{{- end }}
+    ]
     ####### PROJECT IDENTITY
 
     # the 'title' string will appear at the top of this buildbot installation's
     # home pages (linked to the 'titleURL').
 
-    c['title'] = "Pyflakes"
-    c['titleURL'] = "https://launchpad.net/pyflakes"
-    c['buildbotNetUsageData'] = 'basic'
+    c['title'] = '{{ .Values.config.title }}'
+    c['titleURL'] = '{{ .Values.config.titleURL }}'
+    c['buildbotNetUsageData'] = '{{ .Values.config.buildbotNetUsageData }}'
 
     # the 'buildbotURL' string should point to the location where the buildbot's
     # internal web server is visible. This typically uses the port number set in

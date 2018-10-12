@@ -77,7 +77,7 @@ ingress:
     # kubernetes.io/tls-acme: "true"
   path: /
   hosts:
-    - buildbot.local
+  - buildbot.local
   tls: []
   #  - secretName: buildbot-tls
   #    hosts:
@@ -87,8 +87,42 @@ config:
   type: configMap
   name:
   items:
-    - key: master.cfg
-      path: master.cfg
+  - key: master.cfg
+    path: master.cfg
+  changeSource:
+  - |-
+    changes.GitPoller(
+        'git://github.com/buildbot/pyflakes.git',
+        workdir='gitpoller-workdir', branch='master',
+        pollinterval=300))
+  schedulers:
+  - |-
+    schedulers.SingleBranchScheduler(
+        name="all",
+        change_filter=util.ChangeFilter(branch='master'),
+        treeStableTimer=None,
+        builderNames=["runtests"]))
+  - |-
+    schedulers.ForceScheduler(
+        name="force",
+        builderNames=["runtests"]))
+  services: []
+  title: 'Pyflakes'
+  titleURL: 'https://launchpad.net/pyflakes'
+  buildbotNetUsageData: 'basic'
+  factories:
+  - |-
+    factory = util.BuildFactory()
+    # check out the source
+    factory.addStep(steps.Git(repourl='git://github.com/buildbot/pyflakes.git', mode='incremental'))
+    # run the tests (note that this will require that 'trial' is installed)
+    factory.addStep(steps.ShellCommand(command=["trial", "pyflakes"]))
+  builders:
+  - |-
+    util.BuilderConfig(name="runtests",
+       workernames=[worker.name for worker in c['workers']],
+       factory=factory)
+
 
 db:
   force_url:

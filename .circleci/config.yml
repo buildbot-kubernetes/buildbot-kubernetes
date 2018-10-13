@@ -1,24 +1,63 @@
 version: 2
 jobs:
-  build:
+  test:
     docker:
-      - image: gcr.io/k8s-skaffold/skaffold:v0.16.0
+    - image: gcr.io/k8s-skaffold/skaffold:v0.16.0
     steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: 'setup a kubernetes'
-          command: |
-            set -x
-            ./.circleci/dependencies.sh
-            KUBE_VERSION=v1.11 ./.circleci/kubernetes-dind.sh
-            helm init
-            for _ in $(seq 1 30); do
-               helm version && break
-               sleep 1
-            done
-      - run:
-          name: 'run skaffold'
-          command: |
-            ./portforward.sh 32768
-            skaffold run
+    - checkout
+    - setup_remote_docker
+    - run:
+        name: 'setup a kubernetes'
+        command: |
+          set -x
+          ./hack/dependencies.sh
+          KUBE_VERSION=v1.11 ./hack/kubernetes-dind.sh
+          helm init
+          for _ in $(seq 1 30); do
+             helm version && break
+             sleep 1
+          done
+    - run:
+        name: 'run skaffold'
+        command: |
+          ./portforward.sh 32768
+          skaffold run
+
+  release:
+    docker:
+    - image: gcr.io/k8s-skaffold/skaffold:v0.16.0
+    steps:
+    - checkout
+    - add_ssh_keys:
+        fingerprints:
+          - "b2:b2:1a:64:60:47:fc:e4:f1:27:40:59:d7:1b:d7:26"
+    - run:
+        name: 'clone buildbot-kubernetes.github.com'
+        command: |
+          ./hack/dependencies.sh
+          /usr/lib/go-1.9/bin/go get -v  github.com/github/hub
+          export PATH=$PATH:$GOPATH/bin
+          git config --global user.email "ci@buildbot-kubernetes.github.io"
+          git config --global user.name "ci buildbot-kubernetes"
+
+          helm init --client-only
+          if ./hack/release.sh --check-release; then
+              ./hack/release.sh
+          fi
+          cd build/buildbot-kubernetes.github.io
+          git push
+        environment:
+          GOPATH: "/root"
+          GIT_SSH_COMMAND: "ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+
+workflows:
+  version: 2
+  test_and_release:
+    jobs:
+    - test
+    - release:
+        requires:
+        - test
+        filters:
+          branches:
+            only: master

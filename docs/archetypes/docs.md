@@ -1,0 +1,1 @@
+../themes/kube/archetypes/docs.md

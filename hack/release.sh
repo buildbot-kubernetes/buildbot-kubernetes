@@ -6,6 +6,7 @@ print_help() {
     echo "./hack/release.sh [--options]"
     echo ""
     echo "-c|--check-release: Check if release is needed"
+    echo "-d|--update-docs:   Update docs"
     echo "-r|--release:       Perform release (implies a release check before)"
     echo "-p|--publish:       Publish release to repo"
     exit 0
@@ -73,7 +74,16 @@ clone() {
     if [ ! -d "${BUILD_DIR}/${CLONE_DIR}" ]; then
         git clone ${STATIC_REPO} ${BUILD_DIR}/${CLONE_DIR}
     fi
+}
 
+update_docs() {
+    clone
+    COMMIT=$(git rev-parse --short HEAD)
+    (cd docs; hugo)
+    rsync -a --delete --exclude charts --exclude .git --exclude LICENSE --exclude README.md \
+        docs/public/ ${BUILD_DIR}/${CLONE_DIR}/
+    (cd ${BUILD_DIR}/${CLONE_DIR}; git add .; git commit -m "Doc update ${COMMIT}" || true)
+    DONE=true
 }
 
 publish() {
@@ -104,6 +114,10 @@ key="$1"
 case $key in
     -c|--check-release)
     check_release
+    shift
+    ;;
+    -d|--update-docs)
+    update_docs
     shift
     ;;
     -r|--release)

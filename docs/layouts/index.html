@@ -1,0 +1,42 @@
+{{ define "title"}} {{ .Site.Title}} {{end}}
+{{ define "header"}} {{ partial "header" .}} {{end}}
+{{ define "main"}}
+
+<div id="main">
+  <div id="hero">
+    <h1>{{.Title}}</h1>
+    <p>{{.Description}}</p>
+  </div>
+  <div id="action-buttons">
+    <a class="button primary big" href="{{ "/docs/introduction" | relURL }}">Documentation</a>
+    <a class="button outline big" href="https://github.com/buildbot-kubernetes/buildbot-kubernetes">View on Github</a>
+    <p>A collection of plugins, images, manifests to run buildbot on Kubernetes</p>
+  </div>
+  <div class="row gutters">
+    <div class="col col-1 item"></div>
+    <div class="col col-10 item" style="font-size:24px;">
+       <pre><code>helm install --repo https://buildbot-kubernetes.github.io/charts/stable buildbot</code></pre>
+    </div>
+  </div>
+  <div id="kube-features">
+    <div class="row gutters">
+      <div class="col col-6 item">
+        <figure>
+          <img alt="Buildbot" height="96" src="{{ "/logo/buildbot.svg" | relURL }}" width="96">
+        </figure>
+        <h3>Buildbot</h3>
+        <p>The continous integration framework with batteries included</p>
+      </div>
+
+      <div class="col col-6 item">
+        <figure>
+          <img alt="Kubernetes" height="96" src="{{ "/logo/kubernetes_logo_with_border.svg" | relURL }}" width="96">
+        </figure>
+        <h3>Kubernetes</h3>
+        <p>Production-Grade Container Scheduling and Management</p>
+      </div>
+    </div>
+  </div>
+</div>
+{{ end }}
+{{ define "footer"}} {{ partial "footer" .}} {{end}}

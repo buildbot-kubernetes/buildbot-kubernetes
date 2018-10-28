@@ -77,9 +77,11 @@ clone() {
 }
 
 update_docs() {
-    clone
     COMMIT=$(git rev-parse --short HEAD)
+    git submodule init
+    git submodule update
     (cd docs; hugo)
+    clone
     rsync -a --delete --exclude charts --exclude .git --exclude LICENSE --exclude README.md \
         docs/public/ ${BUILD_DIR}/${CLONE_DIR}/
     (cd ${BUILD_DIR}/${CLONE_DIR}; git add .; git commit -m "Doc update ${COMMIT}" || true)

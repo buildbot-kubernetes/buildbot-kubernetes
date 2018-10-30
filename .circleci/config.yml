@@ -21,7 +21,7 @@ jobs:
         name: 'run skaffold'
         command: |
           ./portforward.sh 32768
-          skaffold run
+          make test
 
   docs:
     docker:
@@ -35,8 +35,7 @@ jobs:
     - run:
         name: 'build doc'
         command: |
-          cd docs
-          hugo
+          make docs
 
   release:
     docker:
@@ -47,19 +46,22 @@ jobs:
         fingerprints:
           - "b2:b2:1a:64:60:47:fc:e4:f1:27:40:59:d7:1b:d7:26"
     - run:
-        name: 'Make release'
+        name: 'Install missing package'
         command: |
           ./hack/dependencies.sh
-          /usr/lib/go-1.9/bin/go get -v  github.com/github/hub
+          /usr/lib/go-1.9/bin/go get -v github.com/github/hub
+        environment:
+          GOPATH: "/root"
+    - run:
+        name: 'Make release'
+        command: |
           export PATH=$PATH:$GOPATH/bin
           git config --global user.email "ci@buildbot-kubernetes.github.io"
           git config --global user.name "ci buildbot-kubernetes"
 
           helm init --client-only
-          ./hack/release.sh --update-docs
-          if ./hack/release.sh --check-release; then
-              ./hack/release.sh
-          fi
+          make release-docs
+          make release
           cd build/buildbot-kubernetes.github.io
           git push
         environment:

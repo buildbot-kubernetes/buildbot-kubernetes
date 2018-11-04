@@ -34,7 +34,7 @@ data:
 
     c['mq'] = {
         'type': 'wamp',
-        'router_url': 'ws:/{{ template "buildbot.fullname" . }}-crossbar:8080/ws',
+        'router_url': 'ws://{{ template "buildbot.fullname" . }}-crossbar:8080/ws',
         'realm': 'realm1',
     }
     c['multiMaster'] = True

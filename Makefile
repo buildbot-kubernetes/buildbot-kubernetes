@@ -3,6 +3,7 @@ V=@
 BUILD_DIR=build
 RELEASE_REPO_SRC=git@github.com:buildbot-kubernetes/buildbot-kubernetes.github.io
 RELEASE_REPO=$(BUILD_DIR)/buildbot-kubernetes.github.io
+RELEASE_BASE_URL=https://github.com/buildbot-kubernetes/buildbot-kubernetes/releases/download
 HUGO_THEME_REPO=docs/themes/kube
 
 COMMIT=$(shell git rev-parse --short HEAD)
@@ -56,15 +57,20 @@ release:
 
 else
 
-release:
+release: $(RELEASE_REPO)
 	$(V)./hack/version-compare.sh $(VERSION) $(PREV_VERSION)
 	$(V)echo "Found version $(VERSION)"
 	$(V)helm dependency build helm/buildbot
 	$(V)helm package helm/buildbot --destination $(BUILD_DIR)
 	$(V)git tag -a "v$(VERSION)" -m "Release of v$(VERSION)"
-	$(V)hub release create -a ${BUILD_DIR}/buildbot-*.tgz \
+	$(V)hub release create -a ${BUILD_DIR}/buildbot-$(VERSION).tgz \
 	  -m "v$(VERSION)" \
 	  "v$(VERSION)"
+	$(V)helm repo index $(BUILD_DIR) \
+        --url $(RELEASE_BASE_URL)/v$(VERSION)/ \
+        --merge $(RELEASE_REPO)/charts/stable/index.yaml
+	cp ${BUILD_DIR}/index.yaml $(RELEASE_REPO)/charts/stable/index.yaml
+	$(V)(cd $(RELEASE_REPO); git add .; git commit -m "Release of v$(VERSION)")
 endif
 
 #:vim set noexpandtab shiftwidth=8 softtabstop=0

@@ -94,7 +94,7 @@ config:
     changes.GitPoller(
         'git://github.com/buildbot/pyflakes.git',
         workdir='gitpoller-workdir', branch='master',
-        pollinterval=300))
+        pollinterval=300)
   schedulers:
   - |-
     schedulers.SingleBranchScheduler(

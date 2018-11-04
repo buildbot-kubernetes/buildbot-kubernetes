@@ -101,11 +101,11 @@ config:
         name="all",
         change_filter=util.ChangeFilter(branch='master'),
         treeStableTimer=None,
-        builderNames=["runtests"]))
+        builderNames=["runtests"])
   - |-
     schedulers.ForceScheduler(
         name="force",
-        builderNames=["runtests"]))
+        builderNames=["runtests"])
   services: []
   title: 'Pyflakes'
   titleURL: 'https://launchpad.net/pyflakes'

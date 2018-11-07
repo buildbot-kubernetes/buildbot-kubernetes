@@ -23,8 +23,8 @@ spec:
     spec:
       containers:
       - name: worker
-        image: buildbot/buildbot-worker
-        imagePullPolicy: Always
+        image: {{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}
+        imagePullPolicy: {{ .Values.worker.image.pullPolicy }}
         env:
         - name: BUILDMASTER
           value: '{{ template "buildbot.fullname" . }}-master-pb'

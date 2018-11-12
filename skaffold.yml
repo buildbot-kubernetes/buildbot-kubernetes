@@ -1,4 +1,4 @@
-apiVersion: skaffold/v1alpha4
+apiVersion: skaffold/v1alpha5
 kind: Config
 #build:
 #  artifacts:
@@ -7,7 +7,7 @@ kind: Config
 deploy:
   helm:
     releases:
-    - name: buildbot-kubernetes
+    - name: bb-kube-dev
       chartPath: helm/buildbot
       namespace: bb-kube-dev
 #      values:
@@ -15,3 +15,15 @@ deploy:
       overrides:
         postgresql:
           postgresPassword: skaffold
+        secret:
+          values:
+            foo: bar
+        config:
+          factories:
+          - |-
+            factory = util.BuildFactory()
+            # check out the source
+            factory.addStep(steps.Git(repourl='git://github.com/buildbot/pyflakes.git', mode='incremental'))
+            # run the tests (note that this will require that 'trial' is installed)
+            factory.addStep(steps.ShellCommand(command=["trial", "pyflakes"]))
+            factory.addStep(steps.ShellCommand(command=["touch", util.Secret("foo")]))

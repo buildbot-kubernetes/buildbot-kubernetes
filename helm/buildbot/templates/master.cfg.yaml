@@ -1,3 +1,4 @@
+{{- if not .Values.config.name }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -124,3 +125,4 @@ data:
         'db_url' : "postgresql+psycopg2://{PG_USERNAME}:{PG_PASSWORD}@{{ .Release.Name }}-postgresql/{{ .Values.postgresql.postgresDatabase }}".format(**os.environ)
 {{- end }}
     }
+{{- end }}

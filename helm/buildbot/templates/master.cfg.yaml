@@ -20,6 +20,20 @@ data:
     # a shorter alias to save typing.
     c = BuildmasterConfig = {}
 
+
+    ####### SECRETS
+    c['secretsProviders'] = [
+{{- if .Values.secret.values }}
+        secrets.SecretInAFile(dirname="/var/lib/buildbot-secret/{{ .Release.Name }}-secret/..data"),
+{{- end }}
+{{- range .Values.secret.extraFileSecret }}
+        secrets.SecretInAFile(dirname="/var/lib/buildbot-secret/buildbot-secret-{{ . }}/..data"),
+{{- end }}
+{{- range .Values.secret.extraFileSecret }}
+        {{ . }},
+{{- end }}
+    ]
+
     ####### WORKERS
 
     # The 'workers' list defines the set of recognized workers. Each element is

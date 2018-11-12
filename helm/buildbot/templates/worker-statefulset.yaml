@@ -40,6 +40,6 @@ spec:
 {{- if .Values.worker.password.secret_name}}
               name: {{ .Values.worker.password.secret_name }}
 {{- else }}
-              name: {{ .Release.Name }}-worker-secret
+              name: {{ template "buildbot.fullname" . }}-worker-secret
 {{- end }}
               key: {{ .Values.worker.password.key }}

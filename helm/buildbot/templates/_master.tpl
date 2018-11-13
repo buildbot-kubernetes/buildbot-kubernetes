@@ -20,10 +20,10 @@ template:
     securityContext:
 {{ toYaml . | indent 6 }}
 {{- end }}
-{{- if or .Values.master.securityContext.runAsUser .Values.master.extraInit }}
+{{- if or .Values.master.securityContext.runAsUser .Values.master.extraInit .Values.secret.values .Values.secret.extraFileSecret }}
     initContainers:
 {{- if .Values.master.securityContext.runAsUser }}
-    - name: "chown"
+    - name: "chown-workdir"
       image: "{{ .Values.master.image.repository }}:{{ .Values.master.image.tag }}"
       imagePullPolicy: {{ .Values.master.image.pullPolicy | quote }}
       command:
@@ -35,6 +35,28 @@ template:
       volumeMounts:
       - mountPath: /var/lib/buildbot
         name: buildbot-master-dir
+{{- end }}
+{{- if .Values.secret.values }}
+    - name: "copy-secret"
+      image: "{{ .Values.master.image.repository }}:{{ .Values.master.image.tag }}"
+      imagePullPolicy: {{ .Values.master.image.pullPolicy | quote }}
+      command:
+      - /bin/sh
+      - -c
+      - cp -r /etc/buildbot-secret/* /var/lib/buildbot-secret && chown 945 -R /var/lib/buildbot-secret
+      securityContext:
+        runAsUser: 0
+      volumeMounts:
+      - name: buildbot-secret-workdir
+        mountPath: /var/lib/buildbot-secret
+{{- if .Values.secret.values }}
+      - name: buildbot-secret
+        mountPath: /etc/buildbot-secret/{{ .Release.Name }}-secret
+{{- end }}
+{{- range .Values.secret.extraFileSecret }}
+      - name: buildbot-secret-{{ . }}
+        mountPath: /etc/buildbot-secret/buildbot-secret-{{ . }}
+{{- end }}
 {{- end }}
 {{- end }}
     containers:
@@ -62,7 +84,7 @@ template:
 {{- if .Values.worker.password.secret_name}}
             name: {{ .Values.worker.password.secret_name }}
 {{- else }}
-            name: {{ .Release.Name }}-worker-secret
+            name: {{ template "buildbot.fullname" . }}-worker-secret
 {{- end }}
             key: {{ .Values.worker.password.key }}
 {{- end }}
@@ -114,6 +136,8 @@ template:
       volumeMounts:
       - name: buildbot-master-dir
         mountPath: /var/lib/buildbot
+      - name: buildbot-secret-workdir
+        mountPath: /var/lib/buildbot-secret
       - name: buildbot-master-file
         mountPath: /mnt/buildbot
 {{- if .Values.local_docker.enabled }}
@@ -150,6 +174,8 @@ template:
         mountPath: /var/run/
 {{- end }}
     volumes:
+    - name: buildbot-secret-workdir
+      emptyDir: {}
     - name: buildbot-master-file
       {{ .Values.config.type }}:
 {{- if .Values.config.name }}
@@ -158,7 +184,19 @@ template:
         name: {{ .Release.Name }}-master.cfg
 {{- end }}
         items:
-{{ toYaml .Values.config.items | indent 8 }}
+{{ toYaml .Values.config.items | indent 8 -}}
+{{- if .Values.secret.values }}
+    - name: buildbot-secret
+      secret:
+        secretName: {{ .Release.Name }}-secret
+        defaultMode: 256
+{{- end }}
+{{- range .Values.secret.extraFileSecret }}
+    - name: buildbot-secret-{{ . }}
+      secret:
+        secretName: {{ . }}
+        defaultMode: 256
+{{- end }}
 {{- if .Values.local_docker.enabled }}
     - name: varlibdockerdind
       emptyDir: {}

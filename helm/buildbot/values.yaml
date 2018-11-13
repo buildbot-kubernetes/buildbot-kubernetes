@@ -124,6 +124,12 @@ config:
        factory=factory)
 
 
+secret:
+  extraFileSecret: []
+  extraSecret: []
+  values: {}
+
+
 db:
   force_url:
 

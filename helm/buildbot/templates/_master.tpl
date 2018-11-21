@@ -2,19 +2,15 @@
 replicas: {{ .Values.master.replicaCount }}
 selector:
   matchLabels:
-    app: {{ template "buildbot.name" . }}
-    chart: {{ template "buildbot.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    compotent: {{ template "buildbot.name" . }}-master
+    app.kubernetes.io/name: {{ include "buildbot.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: buildbot-master
 template:
   metadata:
     labels:
-      app: {{ template "buildbot.name" . }}
-      chart: {{ template "buildbot.chart" . }}
-      release: {{ .Release.Name }}
-      heritage: {{ .Release.Service }}
-      compotent: {{ template "buildbot.name" . }}-master
+      app.kubernetes.io/name: {{ include "buildbot.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: buildbot-master
   spec:
 {{- with .Values.master.securityContext }}
     securityContext:

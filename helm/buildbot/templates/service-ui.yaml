@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "buildbot.fullname" . }}-master-ui
+  name: {{ include "buildbot.fullname" . }}-master-ui
   labels:
-    app: {{ template "buildbot.name" . }}
-    chart: {{ template "buildbot.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    compotent: {{ template "buildbot.name" . }}-master
+    app.kubernetes.io/name: {{ include "buildbot.name" . }}
+    helm.sh/chart: {{ include "buildbot.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: buildbot-master
 {{- with .Values.master.serviceUI.annotations }}
   annotations:
 {{ toYaml . | indent 4 }}
@@ -20,8 +20,6 @@ spec:
       protocol: TCP
       name: http
   selector:
-    app: {{ template "buildbot.name" . }}
-    chart: {{ template "buildbot.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    compotent: {{ template "buildbot.name" . }}-master
+    app.kubernetes.io/name: {{ include "buildbot.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: buildbot-master

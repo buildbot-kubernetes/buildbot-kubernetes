@@ -2,24 +2,22 @@
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
-  name: {{ template "buildbot.fullname" . }}-worker
+  name: {{ include "buildbot.fullname" . }}-worker
   labels:
-    app: {{ template "buildbot.name" . }}
-    chart: {{ template "buildbot.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    compotent: {{ template "buildbot.name" . }}-worker
+    app.kubernetes.io/name: {{ include "buildbot.name" . }}
+    helm.sh/chart: {{ include "buildbot.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: buildbot-worker
 spec:
-  serviceName: {{ template "buildbot.fullname" . }}-worker
+  serviceName: {{ include "buildbot.fullname" . }}-worker
   replicas: {{ .Values.worker.replicaCount }}
   template:
     metadata:
       labels:
-        app: {{ template "buildbot.name" . }}
-        chart: {{ template "buildbot.chart" . }}
-        release: {{ .Release.Name }}
-        heritage: {{ .Release.Service }}
-        compotent: {{ template "buildbot.name" . }}-worker
+        app.kubernetes.io/name: {{ include "buildbot.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: buildbot-worker
     spec:
       containers:
       - name: worker
@@ -27,7 +25,7 @@ spec:
         imagePullPolicy: {{ .Values.worker.image.pullPolicy }}
         env:
         - name: BUILDMASTER
-          value: '{{ template "buildbot.fullname" . }}-master-pb'
+          value: '{{ include "buildbot.fullname" . }}-master-pb'
         - name: BUILDMASTER_PORT
           value: '9989'
         - name: WORKERNAME
@@ -40,6 +38,6 @@ spec:
 {{- if .Values.worker.password.secret_name}}
               name: {{ .Values.worker.password.secret_name }}
 {{- else }}
-              name: {{ template "buildbot.fullname" . }}-worker-secret
+              name: {{ include "buildbot.fullname" . }}-worker-secret
 {{- end }}
               key: {{ .Values.worker.password.key }}

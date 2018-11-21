@@ -2,23 +2,26 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ template "buildbot.fullname" . }}-crossbar
+  name: {{ include "buildbot.fullname" . }}-crossbar
   labels:
-    app: {{ template "buildbot.name" . }}
-    chart: {{ template "buildbot.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
-    compotent: {{ template "buildbot.name" . }}-crossbar
+    app.kubernetes.io/name: {{ include "buildbot.name" . }}
+    helm.sh/chart: {{ include "buildbot.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: crossbar-queue
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "buildbot.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: crossbar-queue
   template:
     metadata:
       labels:
-        app: {{ template "buildbot.name" . }}
-        chart: {{ template "buildbot.chart" . }}
-        release: {{ .Release.Name }}
-        heritage: {{ .Release.Service }}
-        compotent: {{ template "buildbot.name" . }}-crossbar
+        app.kubernetes.io/name: {{ include "buildbot.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: crossbar-queue
     spec:
       containers:
       - name: crossbar

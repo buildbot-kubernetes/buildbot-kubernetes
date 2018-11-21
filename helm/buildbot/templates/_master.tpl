@@ -43,7 +43,10 @@ template:
       command:
       - /bin/sh
       - -c
-      - cp -r /etc/buildbot-secret/* /var/lib/buildbot-secret && chown 945 -R /var/lib/buildbot-secret
+      - >-
+        cp -r /etc/buildbot-secret/* /var/lib/buildbot-secret &&
+        chown {{ .Values.master.securityContext.runAsUser }} -R /var/lib/buildbot-secret &&
+        find /var/lib/buildbot-secret -type f -exec chmod 600 {} +
       securityContext:
         runAsUser: 0
       volumeMounts:

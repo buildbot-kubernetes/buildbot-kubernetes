@@ -26,15 +26,15 @@ $(HUGO_THEME_REPO)/theme.toml:
 	$(V)git submodule update $(dir $@)
 
 .PHONY: docs
-docs: |$(HUGO_THEME_REPO)/theme.toml
+docs build/docs: |$(BUILD_DIR) $(HUGO_THEME_REPO)/theme.toml
 	$(V)cd docs; hugo
 
 .PHONY: release-docs
 UNTOUCHED_FILE=.git charts LICENSE README.md
-release-docs: docs | $(RELEASE_REPO)
+release-docs: | build/docs $(RELEASE_REPO)
 	$(V)rsync -av --delete \
 	$(foreach file,$(UNTOUCHED_FILE),--exclude $(file)) \
-	docs/public/ $(RELEASE_REPO)/
+	build/docs/ $(RELEASE_REPO)/
 
 	$(V)cd $(RELEASE_REPO); \
 	git add .; \

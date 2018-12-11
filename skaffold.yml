@@ -15,6 +15,8 @@ deploy:
       overrides:
         postgresql:
           postgresPassword: skaffold
+          persistence:
+            enabled: false
         secret:
           values:
             foo: bar

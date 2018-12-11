@@ -63,9 +63,6 @@ data:
 
     ####### CHANGESOURCES
 
-    # the 'change_source' setting tells the buildmaster how it should find out
-    # about source code changes.  Here we point to the buildbot clone of pyflakes.
-
     c['change_source'] = [
 {{- range .Values.config.changeSource }}
 {{ . | indent 8 }},

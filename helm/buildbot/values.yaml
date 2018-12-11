@@ -92,7 +92,7 @@ config:
   changeSource:
   - |-
     changes.GitPoller(
-        'git://github.com/buildbot/pyflakes.git',
+        'git://github.com/buildbot/hello-world.git',
         workdir='gitpoller-workdir', branch='master',
         pollinterval=300)
   schedulers:
@@ -107,16 +107,17 @@ config:
         name="force",
         builderNames=["runtests"])
   services: []
-  title: 'Pyflakes'
-  titleURL: 'https://launchpad.net/pyflakes'
+  title: 'Hello World CI'
+  titleURL: 'https://buildbot.github.io/hello-world/'
   buildbotNetUsageData: 'basic'
   factories:
   - |-
     factory = util.BuildFactory()
     # check out the source
-    factory.addStep(steps.Git(repourl='git://github.com/buildbot/pyflakes.git', mode='incremental'))
+    factory.addStep(steps.Git(repourl='git://github.com/buildbot/hello-world.git', mode='incremental'))
     # run the tests (note that this will require that 'trial' is installed)
-    factory.addStep(steps.ShellCommand(command=["trial", "pyflakes"]))
+    factory.addStep(steps.ShellCommand(command=["trial", "hello"],
+                                       env={"PYTHONPATH": "."}))
   builders:
   - |-
     util.BuilderConfig(name="runtests",

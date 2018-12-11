@@ -2,5 +2,11 @@ dependencies:
 - name: postgresql
   repository: https://kubernetes-charts.storage.googleapis.com/
   version: 0.18.1
-digest: sha256:d3a1c2738398c0657d885ca0451349f83086936b7a853aeca3d117f93260516d
-generated: 2018-10-02T19:42:10.913312364+02:00
+- name: buildbot-worker
+  repository: file://../buildbot-worker
+  version: 0.0.1
+- name: crossbar
+  repository: file://../crossbar
+  version: 0.0.1
+digest: sha256:7fa05968cfa41a31aea268f35c4bedc073101683d0d6a21e61cea9b4d5de83dd
+generated: 2018-12-10T21:35:49.712946212+01:00

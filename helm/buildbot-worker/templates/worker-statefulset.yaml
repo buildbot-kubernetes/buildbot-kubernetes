@@ -1,0 +1,60 @@
+{{- $buildbot := dict "Release" (dict "Name" .Release.Name) "Chart" (dict "Name" "buildbot") "Values" .Values }}
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: {{ include "buildbot-worker.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "buildbot-worker.name" . }}
+    helm.sh/chart: {{ include "buildbot-worker.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/component: buildbot-worker
+spec:
+  serviceName: {{ include "buildbot-worker.fullname" . }}-worker
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "buildbot-worker.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: buildbot-worker
+    spec:
+      containers:
+      - name: worker
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        - name: BUILDMASTER
+          value: '{{ include "buildbot.fullname" $buildbot }}-master-pb'
+        - name: BUILDMASTER_PORT
+          value: '9989'
+        - name: WORKERNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: WORKERPASS
+          valueFrom:
+            secretKeyRef:
+{{- if .Values.password.secret_name}}
+              name: {{ .Values.password.secret_name }}
+{{- else }}
+              name: {{ include "buildbot-worker.fullname" . }}-secret
+{{- end }}
+              key: {{ .Values.password.key }}
+{{- with .Values.resources }}
+        resources:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+{{- end }}
+{{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+{{- end }}

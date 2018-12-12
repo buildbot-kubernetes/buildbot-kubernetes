@@ -23,7 +23,9 @@ spec:
       {{- if .Values.hostNetwork }}
       hostNetwork: {{ .Values.hostNetwork }}
       {{- end }}
+      {{- if .Values.dnsPolicy }}
       dnsPolicy: {{ .Values.dnsPolicy }}
+      {{- end }}
       containers:
       - name: worker
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}

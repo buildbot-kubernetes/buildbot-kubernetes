@@ -62,6 +62,7 @@ template:
     {{- if .Values.hostNetwork }}
     hostNetwork: {{ .Values.hostNetwork }}
     {{- end }}
+    dnsPolicy: {{ .Values.dnsPolicy }}
     containers:
     - name: {{ .Chart.Name }}
       image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

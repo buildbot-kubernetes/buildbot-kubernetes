@@ -48,6 +48,7 @@ securityContext:
   fsGroup: 945
 
 hostNetwork: false
+dnsPolicy: Default
 
 local_docker:
   enabled: False

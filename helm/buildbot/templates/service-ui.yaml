@@ -8,14 +8,14 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/component: buildbot-master
-{{- with .Values.master.serviceUI.annotations }}
+{{- with .Values.serviceUI.annotations }}
   annotations:
 {{ toYaml . | indent 4 }}
 {{- end }}
 spec:
-  type: {{ .Values.master.serviceUI.type }}
+  type: {{ .Values.serviceUI.type }}
   ports:
-    - port: {{ .Values.master.serviceUI.port }}
+    - port: {{ .Values.serviceUI.port }}
       targetPort: http
       protocol: TCP
       name: http

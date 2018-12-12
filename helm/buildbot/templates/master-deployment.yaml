@@ -1,8 +1,8 @@
-{{- if eq .Values.master.kind "Deployment" }}
+{{- if eq .Values.kind "Deployment" }}
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ include "buildbot.fullname" . }}-master
+  name: {{ include "buildbot.fullname" . }}
   labels:
     app.kubernetes.io/name: {{ include "buildbot.name" . }}
     helm.sh/chart: {{ include "buildbot.chart" . }}

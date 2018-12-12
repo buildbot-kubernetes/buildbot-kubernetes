@@ -2,66 +2,51 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-master:
-  replicaCount: 2
-  kind: Deployment
-  image:
-    repository: buildbot/buildbot-master
-    tag: v1.4.0-py3
-    pullPolicy: IfNotPresent
+nameOverride: ""
+fullnameOverride: ""
 
-  servicePB:
-    type: ClusterIP
-    port: 9989
+replicaCount: 2
 
-  serviceUI:
-    type: ClusterIP
-    port: 8010
+kind: Deployment
 
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #  cpu: 100m
-    #  memory: 128Mi
-    # requests:
-    #  cpu: 100m
-    #  memory: 128Mi
+image:
+  repository: buildbot/buildbot-master
+  tag: v1.4.0-py3
+  pullPolicy: IfNotPresent
 
-  nodeSelector: {}
+servicePB:
+  type: ClusterIP
+  port: 9989
 
-  tolerations: []
+serviceUI:
+  type: ClusterIP
+  port: 8010
 
-  antiAffinity: "soft"
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  # requests:
+  #  cpu: 100m
+  #  memory: 128Mi
 
-  securityContext:
-    capabilities:
-      drop:
-      - ALL
-    runAsUser: 945
-    fsGroup: 945
+nodeSelector: {}
 
-worker:
-  enabled: True
-  replicaCount: 2
-  kind: Deployment
-  image:
-    repository: buildbot/buildbot-worker
-    tag: v1.4.0-py3
-    pullPolicy: IfNotPresent
-  password:
-    secret_name:
-    value:
-    key: worker_password
+tolerations: []
 
-crossbar:
-  enabled: True
-  image:
-    repository: crossbario/crossbar
-    tag: cpy3-18.9.2
-    pullPolicy: IfNotPresent
+affinity: "soft-anti-affinity"
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  runAsUser: 945
+  fsGroup: 945
+
 
 local_docker:
   enabled: False
@@ -92,7 +77,7 @@ config:
   changeSource:
   - |-
     changes.GitPoller(
-        'git://github.com/buildbot/pyflakes.git',
+        'git://github.com/buildbot/hello-world.git',
         workdir='gitpoller-workdir', branch='master',
         pollinterval=300)
   schedulers:
@@ -107,33 +92,39 @@ config:
         name="force",
         builderNames=["runtests"])
   services: []
-  title: 'Pyflakes'
-  titleURL: 'https://launchpad.net/pyflakes'
+  title: 'Hello World CI'
+  titleURL: 'https://buildbot.github.io/hello-world/'
   buildbotNetUsageData: 'basic'
   factories:
   - |-
     factory = util.BuildFactory()
     # check out the source
-    factory.addStep(steps.Git(repourl='git://github.com/buildbot/pyflakes.git', mode='incremental'))
+    factory.addStep(steps.Git(repourl='git://github.com/buildbot/hello-world.git', mode='incremental'))
     # run the tests (note that this will require that 'trial' is installed)
-    factory.addStep(steps.ShellCommand(command=["trial", "pyflakes"]))
+    factory.addStep(steps.ShellCommand(command=["trial", "hello"],
+                                       env={"PYTHONPATH": "."}))
   builders:
   - |-
     util.BuilderConfig(name="runtests",
        workernames=[worker.name for worker in c['workers']],
        factory=factory)
 
-
 secret:
   extraFileSecret: []
   extraSecret: []
   values: {}
 
+buildbot-worker:
+  enabled: True
+
+crossbar:
+  enabled: True
+  forceURL:
 
 db:
-  force_url:
+  enabled: True
+  forceURL:
 
 postgresql:
-  enabled: True
   postgresUser: buildbot
   postgresDatabase: buildbot

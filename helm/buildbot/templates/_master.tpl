@@ -1,5 +1,6 @@
 {{- define "buildbot.master" -}}
-replicas: {{ .Values.master.replicaCount }}
+{{- $buildbotWorker := (dict "Release" (dict "Name" .Release.Name) "Chart" (dict "Name" "buildbot-worker") "Values" (index .Values "buildbot-worker")) }}
+replicas: {{ .Values.replicaCount }}
 selector:
   matchLabels:
     app.kubernetes.io/name: {{ include "buildbot.name" . }}
@@ -12,20 +13,20 @@ template:
       app.kubernetes.io/instance: {{ .Release.Name }}
       app.kubernetes.io/component: buildbot-master
   spec:
-{{- with .Values.master.securityContext }}
+{{- with .Values.securityContext }}
     securityContext:
 {{ toYaml . | indent 6 }}
 {{- end }}
-{{- if or .Values.master.securityContext.runAsUser .Values.master.extraInit .Values.secret.values .Values.secret.extraFileSecret }}
+{{- if or .Values.securityContext.runAsUser .Values.extraInit .Values.secret.values .Values.secret.extraFileSecret }}
     initContainers:
-{{- if .Values.master.securityContext.runAsUser }}
+{{- if .Values.securityContext.runAsUser }}
     - name: "chown-workdir"
-      image: "{{ .Values.master.image.repository }}:{{ .Values.master.image.tag }}"
-      imagePullPolicy: {{ .Values.master.image.pullPolicy | quote }}
+      image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+      imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
       command:
       - /bin/sh
       - -c
-      - chown -R {{ .Values.master.securityContext.runAsUser }}:{{ .Values.master.securityContext.fsGroup }} /var/lib/buildbot
+      - chown -R {{ .Values.securityContext.runAsUser }}:{{ .Values.securityContext.fsGroup }} /var/lib/buildbot
       securityContext:
         runAsUser: 0
       volumeMounts:
@@ -34,14 +35,14 @@ template:
 {{- end }}
 {{- if .Values.secret.values }}
     - name: "copy-secret"
-      image: "{{ .Values.master.image.repository }}:{{ .Values.master.image.tag }}"
-      imagePullPolicy: {{ .Values.master.image.pullPolicy | quote }}
+      image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+      imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
       command:
       - /bin/sh
       - -c
       - >-
         cp -r /etc/buildbot-secret/* /var/lib/buildbot-secret &&
-        chown {{ .Values.master.securityContext.runAsUser }} -R /var/lib/buildbot-secret &&
+        chown {{ .Values.securityContext.runAsUser }} -R /var/lib/buildbot-secret &&
         find /var/lib/buildbot-secret -type f -exec chmod 600 {} +
       securityContext:
         runAsUser: 0
@@ -60,12 +61,12 @@ template:
 {{- end }}
     containers:
     - name: {{ .Chart.Name }}
-      image: "{{ .Values.master.image.repository }}:{{ .Values.master.image.tag }}"
-      imagePullPolicy: {{ .Values.master.image.pullPolicy }}
+      image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+      imagePullPolicy: {{ .Values.image.pullPolicy }}
       env:
       - name: BUILDBOT_CONFIG_URL
         value: "file:///mnt/buildbot/master.cfg"
-{{- if .Values.postgresql.enabled }}
+{{- if .Values.db.enabled }}
       - name: PG_USERNAME
         value: "{{ .Values.postgresql.postgresUser }}"
       - name: PG_PASSWORD
@@ -74,25 +75,25 @@ template:
             name: {{ .Release.Name }}-postgresql
             key: postgres-password
 {{- end }}
-{{- if .Values.worker.enabled }}
+{{- if (index .Values "buildbot-worker").enabled }}
       - name: NUM_WORKERS
-        value: "{{ .Values.worker.replicaCount }}"
+        value: "{{ (index .Values "buildbot-worker").replicaCount }}"
       - name: WORKERPASS
         valueFrom:
           secretKeyRef:
-{{- if .Values.worker.password.secret_name}}
-            name: {{ .Values.worker.password.secret_name }}
+{{- if (index .Values "buildbot-worker").password.secret_name}}
+            name: {{ (index .Values "buildbot-worker").password.secret_name }}
 {{- else }}
-            name: {{ template "buildbot.fullname" . }}-worker-secret
+            name: {{ include "buildbot-worker.fullname" $buildbotWorker }}-secret
 {{- end }}
-            key: {{ .Values.worker.password.key }}
+            key: {{ (index .Values "buildbot-worker").password.key }}
 {{- end }}
       ports:
       - name: http
-        containerPort: {{ .Values.master.serviceUI.port }}
+        containerPort: {{ .Values.serviceUI.port }}
         protocol: TCP
       - name: pb
-        containerPort: {{ .Values.master.servicePB.port }}
+        containerPort: {{ .Values.servicePB.port }}
         protocol: TCP
       livenessProbe:
         httpGet:
@@ -102,18 +103,18 @@ template:
         httpGet:
           path: /
           port: http
-{{- if typeIs "string" .Values.master.antiAffinity }}
-{{- if eq .Values.master.antiAffinity "hard" }}
+{{- if typeIs "string" .Values.antiAffinity }}
+{{- if eq .Values.affinity "hard-anti-affinity" }}
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
           - topologyKey: "kubernetes.io/hostname"
             labelSelector:
               matchLabels:
-                app: "{{ template "buildbot.name" . }}"
-                release: "{{ .Release.Name }}"
-                component: "master"
-{{- else if eq .Values.master.antiAffinity "soft" }}
+                app.kubernetes.io/name: "{{ include "buildbot.name" . }}"
+                app.kubernetes.io/instance: "{{ .Release.Name }}"
+                app.kubernetes.io/component: "buildbot-master"
+{{- else if eq .Values.affinity "soft-anti-affinity" }}
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
@@ -122,12 +123,12 @@ template:
               topologyKey: kubernetes.io/hostname
               labelSelector:
                 matchLabels:
-                  app: "{{ template "buildbot.name" . }}"
-                  release: "{{ .Release.Name }}"
-                  component: "master"
+                  app.kubernetes.io/name: "{{ include "buildbot.name" . }}"
+                  app.kubernetes.io/instance: "{{ .Release.Name }}"
+                  app.kubernetes.io/component: "buildbot-master"
 {{- end }}
 {{- else }}
-{{- with .Values.master.antiAffinity }}
+{{- with .Values.affinity }}
       affinity:
 {{ toYaml . | indent 8 }}
 {{- end }}
@@ -144,22 +145,18 @@ template:
         mountPath: /var/run/docker.sock
         subPath: docker.sock
 {{- end }}
-  {{- with .Values.master.resources }}
+{{- with .Values.resources }}
       resources:
 {{ toYaml . | indent 8 }}
-  {{- end }}
-  {{- with .Values.master.nodeSelector }}
+{{- end }}
+{{- with .Values.nodeSelector }}
     nodeSelector:
 {{ toYaml . | indent 8 }}
-  {{- end }}
-  {{- with .Values.master.affinity }}
-    affinity:
-{{ toYaml . | indent 8 }}
-  {{- end }}
-  {{- with .Values.master.tolerations }}
+{{- end }}
+{{- with .Values.tolerations }}
     tolerations:
 {{ toYaml . | indent 8 }}
-  {{- end }}
+{{- end }}
 {{- if .Values.local_docker.enabled }}
     - name: docker-dind-worker
       image: "{{ .Values.local_docker.image.repository }}:{{ .Values.local_docker.image.tag }}"
@@ -180,14 +177,14 @@ template:
 {{- if .Values.config.name }}
         name: {{ .Values.config.name }}
 {{- else }}
-        name: {{ .Release.Name }}-master.cfg
+        name: {{ include "buildbot.fullname" . }}-master.cfg
 {{- end }}
         items:
 {{ toYaml .Values.config.items | indent 8 -}}
 {{- if .Values.secret.values }}
     - name: buildbot-secret
       secret:
-        secretName: {{ .Release.Name }}-secret
+        secretName: {{ include "buildbot.fullname" . }}-secret
         defaultMode: 256
 {{- end }}
 {{- range .Values.secret.extraFileSecret }}

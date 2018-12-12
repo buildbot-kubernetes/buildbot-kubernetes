@@ -2,4 +2,15 @@ dependencies:
 - name: postgresql
   version: 0.18.1
   repository: https://kubernetes-charts.storage.googleapis.com/
-  condition: postgresql.enabled
+  condition: db.enabled
+- name: buildbot-worker
+  repository: file://../buildbot-worker
+  condition: buildbot-worker.enabled
+  version: ">= 0.0.0"
+- name: crossbar
+  repository: file://../crossbar
+  condition: crossbar.enabled
+  version: ">= 0.0.0"
+  import-values:
+  - child: service
+    parent: crossbar.service

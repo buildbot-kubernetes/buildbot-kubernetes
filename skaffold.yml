@@ -1,4 +1,4 @@
-apiVersion: skaffold/v1alpha5
+apiVersion: skaffold/v1beta1
 kind: Config
 #build:
 #  artifacts:
@@ -15,6 +15,8 @@ deploy:
       overrides:
         postgresql:
           postgresPassword: skaffold
+          persistence:
+            enabled: false
         secret:
           values:
             foo: bar
@@ -23,7 +25,7 @@ deploy:
           - |-
             factory = util.BuildFactory()
             # check out the source
-            factory.addStep(steps.Git(repourl='git://github.com/buildbot/pyflakes.git', mode='incremental'))
+            factory.addStep(steps.Git(repourl='git://github.com/buildbot/hello-world.git', mode='incremental'))
             # run the tests (note that this will require that 'trial' is installed)
-            factory.addStep(steps.ShellCommand(command=["trial", "pyflakes"]))
+            factory.addStep(steps.ShellCommand(command=["trial", "hello"], env={"PYTHONPATH": "."}))
             factory.addStep(steps.ShellCommand(command=["touch", util.Secret("foo")]))

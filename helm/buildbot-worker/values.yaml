@@ -36,4 +36,4 @@ tolerations: []
 affinity: {}
 
 hostNetwork: false
-dnsPolicy: Default
+dnsPolicy:

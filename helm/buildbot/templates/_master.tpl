@@ -59,6 +59,9 @@ template:
 {{- end }}
 {{- end }}
 {{- end }}
+    {{- if .Values.hostNetwork }}
+    hostNetwork: {{ .Values.hostNetwork }}
+    {{- end }}
     containers:
     - name: {{ .Chart.Name }}
       image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

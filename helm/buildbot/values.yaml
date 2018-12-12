@@ -47,6 +47,7 @@ securityContext:
   runAsUser: 945
   fsGroup: 945
 
+hostNetwork: false
 
 local_docker:
   enabled: False
